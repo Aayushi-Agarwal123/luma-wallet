@@ -5,19 +5,14 @@ import "./App.css";
 
 type Page = "Overview" | "Transactions" | "Budgets" | "Analytics" | "My cards";
 type Tx = { id: string; title: string; category: string; date: string; amount: number; type: "income" | "expense"; account: string };
-const seed: Tx[] = [
-  { id:"1", title:"Monthly salary", category:"Salary", date:"2026-10-25", amount:52800, type:"income", account:"Personal account" },
-  { id:"2", title:"Grocery shopping", category:"Groceries", date:"2026-10-24", amount:3250, type:"expense", account:"Personal account" },
-  { id:"3", title:"Freelance project", category:"Freelance", date:"2026-10-22", amount:8500, type:"income", account:"Personal account" },
-  { id:"4", title:"Shopping", category:"Shopping", date:"2026-10-20", amount:4200, type:"expense", account:"Personal account" },
-  { id:"5", title:"Electricity bill", category:"Bills", date:"2026-10-18", amount:1800, type:"expense", account:"Personal account" },
-  { id:"6", title:"Coffee with friends", category:"Dining", date:"2026-10-16", amount:620, type:"expense", account:"Personal account" },
-];
+
 const nav: { name: Page; icon: string }[] = [
   { name:"Overview", icon:"⌂" }, { name:"Transactions", icon:"⇄" }, { name:"Budgets", icon:"▤" }, { name:"Analytics", icon:"▥" }, { name:"My cards", icon:"▱" },
 ];
 const money = (n:number) => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
-const API_URL = "http://localhost:5000/api/transactions";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000/api/transactions";
 function Orb() {
   return <Canvas camera={{position:[0,0,4],fov:42}} dpr={[1,1.5]}>
     <ambientLight intensity={1.5}/><directionalLight position={[3,4,5]} intensity={2} color="#e5ffeb"/><pointLight position={[-3,-2,2]} intensity={2} color="#65c997"/>
@@ -36,7 +31,7 @@ function CashChart() {
 function Spending({tx}:{tx:Tx[]}) {
   const data=useMemo(()=>{const map=new Map<string,number>();tx.filter(t=>t.type==="expense").forEach(t=>map.set(t.category,(map.get(t.category)||0)+t.amount));return [...map].sort((a,b)=>b[1]-a[1]).slice(0,4)},[tx]);
   const colors=["#39795c","#d9a36f","#8e88c9","#78a7bb"], total=data.reduce((s,x)=>s+x[1],0)||1;
-  let used=0; const stops=data.map(([name,v],i)=>{const start=used;used+=v/total*100;return `${colors[i]} ${start}% ${used}%`}).join(",");
+  let used=0; const stops=data.map(([,v],i)=>{const start=used;used+=v/total*100;return `${colors[i]} ${start}% ${used}%`}).join(",");
   return <><div className="donut-layout"><div className="donut" style={{background:`conic-gradient(${stops||"#dce8dc 0% 100%"})`}}><div className="donut-hole"><small>Total spending</small><strong>{money(total)}</strong></div></div><div className="donut-legend">{data.map(([name,v],i)=><div className="legend-row" key={name}><span><i style={{background:colors[i]}}/>{name}</span><b>{money(v)}</b></div>)}</div></div></>;
 }
 function Stat({label,value,change,icon,tone,n}:{label:string;value:string;change:string;icon:string;tone:string;n:number}) {
