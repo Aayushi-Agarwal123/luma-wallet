@@ -17,7 +17,7 @@ const nav: { name: Page; icon: string }[] = [
   { name:"Overview", icon:"⌂" }, { name:"Transactions", icon:"⇄" }, { name:"Budgets", icon:"▤" }, { name:"Analytics", icon:"▥" }, { name:"My cards", icon:"▱" },
 ];
 const money = (n:number) => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
-
+const API_URL = "http://localhost:5000/api/transactions";
 function Orb() {
   return <Canvas camera={{position:[0,0,4],fov:42}} dpr={[1,1.5]}>
     <ambientLight intensity={1.5}/><directionalLight position={[3,4,5]} intensity={2} color="#e5ffeb"/><pointLight position={[-3,-2,2]} intensity={2} color="#65c997"/>
@@ -48,12 +48,35 @@ function TxTable({items,onEdit,onDelete,compact=false}:{items:Tx[];onEdit:(t:Tx)
 
 export default function App() {
   const [page,setPage]=useState<Page>("Overview");
-  const [tx,setTx]=useState<Tx[]>(()=>{try{return JSON.parse(localStorage.getItem("luma-wallet-transactions-v1")||"null")||seed}catch{return seed}});
+  const [tx, setTx] = useState<Tx[]>([]);
   const [monthlyBudget,setMonthlyBudget]=useState(()=>Number(localStorage.getItem("luma-wallet-monthly-budget-v1")||21000));
   const [query,setQuery]=useState(""); const [filter,setFilter]=useState<"all"|"income"|"expense">("all");
   const [modal,setModal]=useState(false); const [editing,setEditing]=useState<string|null>(null);
   const [form,setForm]=useState({title:"",category:"Groceries",date:"2026-10-27",amount:"",type:"expense" as "income"|"expense"});
-  useEffect(()=>{localStorage.setItem("luma-wallet-transactions-v1",JSON.stringify(tx))},[tx]);
+  useEffect(() => {
+  async function loadTransactions() {
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Could not load transactions.");
+      }
+
+      setTx(
+        result.data.map((item: Omit<Tx, "account">) => ({
+          ...item,
+          account: "Personal account",
+        })),
+      );
+    } catch (error) {
+      console.error("Load transactions error:", error);
+      alert("Could not load transactions. Check whether the backend is running.");
+    }
+  }
+
+  void loadTransactions();
+}, []);
   useEffect(()=>{localStorage.setItem("luma-wallet-monthly-budget-v1",String(monthlyBudget))},[monthlyBudget]);
   const income=tx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
   const expenses=tx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
@@ -62,8 +85,82 @@ export default function App() {
   const visible=tx.filter(t=>`${t.title} ${t.category} ${t.date}`.toLowerCase().includes(query.toLowerCase())&&(filter==="all"||t.type===filter)).sort((a,b)=>b.date.localeCompare(a.date));
   function add(){setEditing(null);setForm({title:"",category:"Groceries",date:"2026-10-27",amount:"",type:"expense"});setModal(true)}
   function edit(t:Tx){setEditing(t.id);setForm({title:t.title,category:t.category,date:t.date,amount:String(t.amount),type:t.type});setModal(true)}
-  function save(e:FormEvent<HTMLFormElement>){e.preventDefault();const amount=Number(form.amount);if(!form.title.trim()||!Number.isFinite(amount)||amount<=0)return;const item:Tx={id:editing||String(Date.now()),title:form.title.trim(),category:form.category,date:form.date,amount,type:form.type,account:"Personal account"};setTx(old=>editing?old.map(t=>t.id===editing?item:t):[item,...old]);setModal(false)}
-  function remove(id:string){if(window.confirm("Delete this transaction?"))setTx(old=>old.filter(t=>t.id!==id))}
+  async function save(e: FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+
+  const amount = Number(form.amount);
+
+  if (!form.title.trim() || !Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+
+  const payload = {
+    title: form.title.trim(),
+    category: form.category,
+    date: form.date,
+    amount,
+    type: form.type,
+  };
+
+  try {
+    const response = await fetch(
+      editing ? `${API_URL}/${editing}` : API_URL,
+      {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Could not save transaction.");
+    }
+
+    const savedTransaction: Tx = {
+      ...result.data,
+      account: "Personal account",
+    };
+
+    setTx((old) =>
+      editing
+        ? old.map((t) =>
+            t.id === editing ? savedTransaction : t,
+          )
+        : [savedTransaction, ...old],
+    );
+
+    setModal(false);
+  } catch (error) {
+    console.error("Save transaction error:", error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Could not save transaction.",
+    );
+  }
+}
+  async function remove(id: string) {
+  if (!window.confirm("Delete this transaction?")) return;
+
+  try {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Could not delete transaction");
+    }
+
+    setTx((old) => old.filter((item) => item.id !== id));
+  } catch (error) {
+    console.error("Delete transaction error:", error);
+    alert(error instanceof Error ? error.message : "Could not delete transaction.");
+  }
+}
   function exportCsv(){const rows=[["Title","Category","Date","Type","Amount","Account"],...visible.map(t=>[t.title,t.category,t.date,t.type,String(t.amount),t.account])];const csv=rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(",")).join("\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));const a=document.createElement("a");a.href=url;a.download="luma-wallet-transactions.csv";a.click();URL.revokeObjectURL(url)}
   const description:Record<Page,string>={Overview:"Here's the story your money is telling this month.",Transactions:"Every little detail, all in one place.",Budgets:"Give every rupee a thoughtful purpose.",Analytics:"Understand your habits and find your next step.","My cards":"Your everyday spending, thoughtfully organised."};
   return <div className="app-shell">
