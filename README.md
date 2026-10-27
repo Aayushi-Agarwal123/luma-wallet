@@ -1,10 +1,17 @@
-#  Luma Wallet
+# Luma Wallet
 
 ### Your money, beautifully organized.
 
 Luma Wallet is a modern personal finance dashboard designed to make tracking expenses, managing budgets, and understanding spending habits simple and intuitive.
 
 Built with a clean interface, a calming sage-and-forest-green color palette, and a focus on user experience, Luma Wallet brings everyday money management into one place.
+
+## 🔗 Live Demo & Deployment
+
+- **Frontend:** [Luma Wallet — Live Website](https://luma-wallet.vercel.app)
+- **Backend API:** [Luma Wallet — Render](https://luma-wallet-4.onrender.com)
+
+> **Deployment status:** The frontend and backend are deployed. The backend is successfully connected to MongoDB Atlas. Frontend-to-backend integration and Content Security Policy (CSP) issues are currently being investigated.
 
 ## ✨ Features
 
@@ -25,14 +32,13 @@ The goal is to make financial information feel clear, approachable, and easy to 
 
 ## 🛠️ Tech Stack
 
-- **React**
-- **TypeScript**
-- **Vite**
-- **CSS**
-- **Three.js**
-- **React Three Fiber**
-- **React Three Drei**
-- **Browser Local Storage**
+- **Frontend:** React, TypeScript, Vite, CSS
+- **3D Graphics:** Three.js, React Three Fiber, React Three Drei
+- **Backend:** Node.js, TypeScript
+- **Database:** MongoDB Atlas
+- **Backend Hosting:** Render
+- **Frontend Hosting:** Vercel
+- **Browser Storage:** Local Storage
 
 ## 🚀 Getting Started
 
@@ -54,19 +60,11 @@ Make sure you have [Node.js](https://nodejs.org/) and npm installed.
    cd luma-wallet
    ```
 
-3. Install dependencies:
+3. Install dependencies in the appropriate frontend or backend directory using its `package.json`.
 
-   ```bash
-   npm install
-   ```
+4. Configure the required environment variables locally. Never commit database credentials or API secrets.
 
-4. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open the local URL shown in your terminal to explore Luma Wallet.
+5. Start the development server using the scripts defined in the relevant `package.json`.
 
 ## 📂 Project Structure
 
@@ -86,20 +84,25 @@ luma-wallet/
 └── vite.config.ts
 ```
 
+*Note: The repository may contain additional backend files and directories as development progresses.*
+
 ## 🔒 Data & Privacy
 
 Luma Wallet currently uses browser local storage for supported data. Data is stored locally in the browser rather than synced through a backend account.
 
-**Note:** This project is a personal finance management interface, not a banking application. Live bank integration and cloud synchronization are not currently included.
+The backend is deployed and connected to MongoDB Atlas. Frontend integration with the deployed backend is still being tested.
+
+**Note:** This project is a personal finance management interface, not a banking application. Live bank integration is not currently included.
 
 ## 🗺️ Future Improvements
 
-- [ ] Enhanced transaction categorization
-- [ ] Advanced budgeting and spending insights
-- [ ] Improved charts and financial reports
-- [ ] Data backup and restore options
-- [ ] Authentication and secure cloud synchronization
-- [ ] Further UI and accessibility improvements
+- Enhanced transaction categorization
+- Advanced budgeting and spending insights
+- Improved charts and financial reports
+- Data backup and restore options
+- Authentication and secure cloud synchronization
+- Complete frontend-backend integration
+- Further UI and accessibility improvements
 
 ## 👩‍💻 Author
 
